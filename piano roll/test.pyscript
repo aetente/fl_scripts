@@ -1,0 +1,35 @@
+import flpianoroll as flp 
+import math 
+
+MAX_PULSES = 99999
+NOTE_COLOR = 0
+
+
+def writeNote(time, number, length):
+    note = flp.Note()
+    note.time = time
+    note.number = number
+    note.length = length
+    flp.score.addNote(note)
+
+def createDialog():
+    form = flp.ScriptDialog('test', 'test')
+    form.AddInputKnob('freq sine', 1.0, -99999.0, 99999.0)
+    form.AddInputKnob('freq speed', 1, -99999, 99999)
+    form.AddInputKnobInt('Pattern Length', 32, 1, MAX_PULSES)
+    return form
+    
+def apply(form):
+	ht = 1.0
+	# get values
+	noteLength = 0.25
+	pulses = form.GetInputValue("Pattern Length")
+	freq_sine = form.GetInputValue("freq sine")
+	freq_speed = form.GetInputValue("freq speed")
+	
+	# write notes
+	for n in range(pulses):
+		ht = (math.sin(n * freq_speed) + 0.1)
+		writeNote((n +ht) * noteLength * flp.score.PPQ, math.ceil(12*(math.sin(n * freq_sine) + 1) / 2 + 42), 
+							noteLength * flp.score.PPQ)
+            

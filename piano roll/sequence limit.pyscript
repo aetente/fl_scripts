@@ -1,0 +1,98 @@
+import flpianoroll as flp
+import math
+
+# STRING_NOTES = [40, 45, 50, 55, 59, 64]  #E, A, D, G, B, E
+
+TIME_PER_STEP = 96 * 2
+TEST_CHORDS = 'Cm,Cm,Fm,Fm,Fdim,Fdim,Cm,Cm,Ab,Ab,D7,D7,Gm,Gm,C7,C7,Fm,Fm,Bb7,Bb7,Eb,Eb,Ab,Ab,Bb7,Bb7,Eb,Eb,F7,F7,Ddim7,Ddim7,Cm,E,Fm7,Fm7,Adim7,Adim7,Cm,Cm,Adim7,Adim7,Cm,Cm,Ab,Ab,G7'
+DEFAULT_NO_REPEATING = True
+
+STRING_NOTES = [48, 50, 52, 53, 55, 57, 59]  #c, d, e, f, g, a, b
+# STRING_NOTES = [48, 50, 52, 53, 55, 57, 59]  #c, d, e, f, g, a, b
+SCALES = {
+	'M': [0,2,4,5,7,9,11],
+	'm': [0,2,3,5,7,8,10],
+	'dim': [0,4,8]
+}
+CHORDS = {
+	'': [0,4,7],
+	'M': [0,4,7],
+	'm': [0,3,7],
+	'dim': [0,3,6],
+	'dim7': [0,3,6],
+	'7': [0,4,7,11],
+	'm7': [0,3,7,10]
+}
+VALID_NOTES = ['A', 'Am', 'A#', 'A#m', 'B', 'Bm', 'C', 'Cm', 'C#', 'C#m', 'D', 'Dm', 'D#', 'D#m', 'E', 'Em', 'F', 'Fm', 'F#', 'F#m', 'G', 'Gm', 'G#', 'G#m']
+CHROMATIC_SCALE = {
+	'B#': 0,
+	'C': 0,
+	'C#': 1,
+	'Db': 1,
+	'D': 2,
+	'D#': 3,
+	'Eb': 3,
+	'E': 4,
+	'E#': 5,
+	'Fb': 4,
+	'F': 5,
+	'F#': 6,
+	'Gb': 6,
+	'G': 7,
+	'G#': 8,
+	'Ab': 8,
+	'A': 9,
+	'A#': 10,
+	'Bb': 10,
+	'B': 11,
+	'Cb': 11,
+}
+NATURAL_NOTES = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
+
+def createDialog() :
+  form = flp.ScriptDialog('Add One Note','')
+  form.AddInputText('Chords',TEST_CHORDS)
+  form.AddInputCheckbox('no repeating',DEFAULT_NO_REPEATING)
+  return form
+
+def apply(form) :
+	chords_string = form.GetInputValue('Chords')
+	no_repeating = form.GetInputValue('no repeating')
+	current_chord = 0
+	chords_array = chords_string.split(',')
+	flp.Utils.log(str(chords_array))
+	previous_note = 999
+	for i in range(flp.score.noteCount):
+		# if the step is over, go to next chord
+		if (flp.score.getNote(i).time >= TIME_PER_STEP * (current_chord + 1)):
+			current_chord += 1
+		if (current_chord > len(chords_array)):
+			break
+		flp.Utils.log(str(i) + ' : ' + str(chords_array[current_chord]) + ':' + str(current_chord) + ' : time - ' + str(flp.score.getNote(i).time))
+		base_note_string = ''
+		chord_type = ''
+		# get base note (C) and type of chord (m or minor)
+		for l in range(len(chords_array[current_chord])):
+			if (l == 0):
+				base_note_string += chords_array[current_chord][l]
+			elif (chords_array[current_chord][l] == '#' or chords_array[current_chord][l] == 'b'):
+				base_note_string += chords_array[current_chord][l]
+			else:
+				chord_type += chords_array[current_chord][l]
+		if (chord_type == ''):
+			chord_type = 'M'
+		# get number for base note
+		base_note = CHROMATIC_SCALE[base_note_string]
+		# convert current note in range from 0 to 12
+		modulo_note = flp.score.getNote(i).number % 12
+		min_note_distance = 999
+		# go through chord notes
+		for n in range(len(CHORDS[chord_type])):
+			chord_note = (base_note + CHORDS[chord_type][n]) % 12
+			note_distance = modulo_note - chord_note
+			if (math.fabs(note_distance) < math.fabs(min_note_distance) and (chord_note != previous_note or not no_repeating)):
+				min_note_distance = note_distance
+			# flp.Utils.log(base_note_string + chord_type + ' : ' + str(CHORDS[chord_type]) + ' : ' + str(chord_note) + ' : ' + str(modulo_note) + ' : ' + str(note_distance) + ' : ' + str(min_note_distance))
+		flp.score.getNote(i).number -= min_note_distance
+		previous_note = (flp.score.getNote(i).number % 12)
+		# flp.Utils.log(str(i) + ' : ' + str(flp.score.getNote(i).number) + ' : ' + str(flp.score.getNote(i).time))

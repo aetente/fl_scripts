@@ -14,10 +14,15 @@ def writeNote(time, number, length):
 
 def createDialog():
     form = flp.ScriptDialog('test', 'test')
-    form.AddInputKnob('freq sine', 1.0, -99999.0, 99999.0)
-    form.AddInputKnob('freq speed', 1, -99999, 99999)
+    form.AddInputKnob('freq sine', 1.0, -99999, 99999)
+    form.AddInputKnob('freq sine 2', 0.1, -99999, 99999)
+    form.AddInputKnob('sine range 2', 12.0, -99999, 99999)
+    form.AddInputKnob('freq speed', 1.0, -99999, 99999)
     form.AddInputKnobInt('Pattern Length', 32, 1, MAX_PULSES)
     return form
+
+def pos_sin(x):
+	return (math.sin(x) + 1) / 2
     
 def apply(form):
 	ht = 1.0
@@ -25,11 +30,13 @@ def apply(form):
 	noteLength = 0.25
 	pulses = form.GetInputValue("Pattern Length")
 	freq_sine = form.GetInputValue("freq sine")
+	freq_sine2 = form.GetInputValue("freq sine 2")
+	sine_range2 = form.GetInputValue("sine range 2")
 	freq_speed = form.GetInputValue("freq speed")
 	
 	# write notes
 	for n in range(pulses):
 		ht = (math.sin(n * freq_speed) + 0.1)
-		writeNote((n +ht) * noteLength * flp.score.PPQ, math.ceil(12*(math.sin(n * freq_sine) + 1) / 2 + 42), 
+		writeNote((n +ht) * noteLength * flp.score.PPQ, math.ceil(12*pos_sin(n * freq_sine)) + math.ceil(sine_range2*pos_sin(n * freq_sine2)) + 42, 
 							noteLength * flp.score.PPQ)
             

@@ -4,7 +4,7 @@ import math
 # STRING_NOTES = [40, 45, 50, 55, 59, 64]  #E, A, D, G, B, E
 
 TIME_PER_STEP = 96 * 2
-TEST_CHORDS = 'Cm,Cm,Fm,Fm,Fdim,Fdim,Cm,Cm,Ab,Ab,D7,D7,Gm,Gm,C7,C7,Fm,Fm,Bb7,Bb7,Eb,Eb,Ab,Ab,Bb7,Bb7,Eb,Eb,F7,F7,Ddim7,Ddim7,Cm,E,Fm7,Fm7,Adim7,Adim7,Cm,Cm,Adim7,Adim7,Cm,Cm,Ab,Ab,G7'
+TEST_CHORDS = 'Cm,Cm,Fm,Fm,Fdim,Fdim,Cm,Cm,Ab,Ab,D7,D7,Gm,Gm,C7,C7,Fm,Fm,Bb7,Bb7,Eb,Eb,Ab,Ab,Bb7,Bb7,Eb,Eb,F7,F7,Ddim7,Ddim7,Cm,Eb,Fm7,Fm7,Adim7,Adim7,Cm,Cm,Adim7,Adim7,Cm,Cm,Ab,Ab,G7'
 DEFAULT_NO_REPEATING = True
 
 STRING_NOTES = [48, 50, 52, 53, 55, 57, 59]  #c, d, e, f, g, a, b
@@ -20,7 +20,8 @@ CHORDS = {
 	'm': [0,3,7],
 	'dim': [0,3,6],
 	'dim7': [0,3,6],
-	'7': [0,4,7,11],
+	'7': [0,4,7,10],
+	'M7': [0,4,7,11],
 	'm7': [0,3,7,10]
 }
 VALID_NOTES = ['A', 'Am', 'A#', 'A#m', 'B', 'Bm', 'C', 'Cm', 'C#', 'C#m', 'D', 'Dm', 'D#', 'D#m', 'E', 'Em', 'F', 'Fm', 'F#', 'F#m', 'G', 'Gm', 'G#', 'G#m']
@@ -55,6 +56,12 @@ def createDialog() :
   form.AddInputCheckbox('no repeating',DEFAULT_NO_REPEATING)
   return form
 
+def createMarker(name, time):
+	marker_el = flp.Marker()
+	marker_el.name = name
+	marker_el.time = time
+	return marker_el
+
 def apply(form) :
 	chords_string = form.GetInputValue('Chords')
 	no_repeating = form.GetInputValue('no repeating')
@@ -62,10 +69,12 @@ def apply(form) :
 	chords_array = chords_string.split(',')
 	flp.Utils.log(str(chords_array))
 	previous_note = 999
+	flp.score.addMarker(createMarker(chords_array[current_chord], 0))
 	for i in range(flp.score.noteCount):
 		# if the step is over, go to next chord
 		if (flp.score.getNote(i).time >= TIME_PER_STEP * (current_chord + 1)):
 			current_chord += 1
+			flp.score.addMarker(createMarker(chords_array[current_chord], TIME_PER_STEP * current_chord))
 		if (current_chord > len(chords_array)):
 			break
 		flp.Utils.log(str(i) + ' : ' + str(chords_array[current_chord]) + ':' + str(current_chord) + ' : time - ' + str(flp.score.getNote(i).time))

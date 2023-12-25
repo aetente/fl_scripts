@@ -1,0 +1,8 @@
+import flpianoroll as flp
+
+def createDialog():
+	form = flp.ScriptDialog('delete all markers', 'delete all markers')
+	return form
+
+def apply(form):
+	flp.score.clearMarkers(True)

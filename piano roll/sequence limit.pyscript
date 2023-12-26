@@ -6,13 +6,20 @@ import math
 TIME_PER_STEP = 96 * 2
 TEST_CHORDS = 'Cm,Cm,Fm,Fm,Fdim,Fdim,Cm,Cm,Ab,Ab,D7,D7,Gm,Gm,C7,C7,Fm,Fm,Bb7,Bb7,Eb,Eb,Ab,Ab,Bb7,Bb7,Eb,Eb,F7,F7,Ddim7,Ddim7,Cm,Eb,Fm7,Fm7,Adim7,Adim7,Cm,Cm,Adim7,Adim7,Cm,Cm,Ab,Ab,G7'
 DEFAULT_NO_REPEATING = True
+DEFAULT_IS_MELODY = False
+DEFAULT_ADD_MARKS = False
 
 STRING_NOTES = [48, 50, 52, 53, 55, 57, 59]  #c, d, e, f, g, a, b
 # STRING_NOTES = [48, 50, 52, 53, 55, 57, 59]  #c, d, e, f, g, a, b
 SCALES = {
+	'': [0,2,4,5,7,9,11],
 	'M': [0,2,4,5,7,9,11],
 	'm': [0,2,3,5,7,8,10],
-	'dim': [0,4,8]
+	'dim': [0,3,6],
+	'dim7': [0,3,6,9],
+	'7': [0,2,4,5,7,9,10],
+	'M7': [0,2,4,5,7,9,11],
+	'm7': [0,2,3,5,7,8,10]
 }
 CHORDS = {
 	'': [0,4,7],
@@ -54,6 +61,8 @@ def createDialog() :
   form = flp.ScriptDialog('Add One Note','')
   form.AddInputText('Chords',TEST_CHORDS)
   form.AddInputCheckbox('no repeating',DEFAULT_NO_REPEATING)
+  form.AddInputCheckbox('is melody',DEFAULT_IS_MELODY)
+  form.AddInputCheckbox('add marks',DEFAULT_ADD_MARKS)
   return form
 
 def createMarker(name, time):
@@ -65,16 +74,21 @@ def createMarker(name, time):
 def apply(form) :
 	chords_string = form.GetInputValue('Chords')
 	no_repeating = form.GetInputValue('no repeating')
+	is_melody = form.GetInputValue('is melody')
+	add_marks = form.GetInputValue('add marks')
+
 	current_chord = 0
 	chords_array = chords_string.split(',')
 	flp.Utils.log(str(chords_array))
 	previous_note = 999
-	flp.score.addMarker(createMarker(chords_array[current_chord], 0))
+	if add_marks:
+		flp.score.addMarker(createMarker(chords_array[current_chord], 0))
 	for i in range(flp.score.noteCount):
 		# if the step is over, go to next chord
 		if (flp.score.getNote(i).time >= TIME_PER_STEP * (current_chord + 1)):
 			current_chord += 1
-			flp.score.addMarker(createMarker(chords_array[current_chord], TIME_PER_STEP * current_chord))
+			if add_marks:
+				flp.score.addMarker(createMarker(chords_array[current_chord], TIME_PER_STEP * current_chord))
 		if (current_chord > len(chords_array)):
 			break
 		flp.Utils.log(str(i) + ' : ' + str(chords_array[current_chord]) + ':' + str(current_chord) + ' : time - ' + str(flp.score.getNote(i).time))
@@ -96,12 +110,15 @@ def apply(form) :
 		modulo_note = flp.score.getNote(i).number % 12
 		min_note_distance = 999
 		# go through chord notes
-		for n in range(len(CHORDS[chord_type])):
-			chord_note = (base_note + CHORDS[chord_type][n]) % 12
+		chord_notes = CHORDS
+		if (is_melody):
+			chord_notes = SCALES
+		for n in range(len(chord_notes[chord_type])):
+			chord_note = (base_note + chord_notes[chord_type][n]) % 12
 			note_distance = modulo_note - chord_note
 			if (math.fabs(note_distance) < math.fabs(min_note_distance) and (chord_note != previous_note or not no_repeating)):
 				min_note_distance = note_distance
-			# flp.Utils.log(base_note_string + chord_type + ' : ' + str(CHORDS[chord_type]) + ' : ' + str(chord_note) + ' : ' + str(modulo_note) + ' : ' + str(note_distance) + ' : ' + str(min_note_distance))
+			# flp.Utils.log(base_note_string + chord_type + ' : ' + str(chord_notes[chord_type]) + ' : ' + str(chord_note) + ' : ' + str(modulo_note) + ' : ' + str(note_distance) + ' : ' + str(min_note_distance))
 		flp.score.getNote(i).number -= min_note_distance
 		previous_note = (flp.score.getNote(i).number % 12)
 		# flp.Utils.log(str(i) + ' : ' + str(flp.score.getNote(i).number) + ' : ' + str(flp.score.getNote(i).time))
